@@ -1,5 +1,12 @@
-
 import neo4j
+
+RESULT_FORMAT = 'row'
+
+
+def unpack(row):
+    if RESULT_FORMAT == 'row':
+        return tuple(row['row'])
+    return row
 
 
 class Cursor(object):
@@ -34,19 +41,19 @@ class Cursor(object):
         self._execute_pending()
         row = self._rows[self._cursor]
         self._cursor += 1
-        return tuple(row['row'])
+        return unpack(row)
 
     def fetchmany(self, size=None):
         self._execute_pending()
         if size is None:
             size = self.arraysize
-        result = [tuple(r['row']) for r in self._rows[self._cursor:self._cursor + size]]
+        result = [unpack(r) for r in self._rows[self._cursor:self._cursor + size]]
         self._cursor += size
         return result
 
     def fetchall(self):
         self._execute_pending()
-        result = [tuple(r['row']) for r in self._rows[self._cursor:]]
+        result = [unpack(r) for r in self._rows[self._cursor:]]
         self._cursor += self.rowcount
         return result
 
@@ -128,7 +135,16 @@ class Cursor(object):
 
             result = self._execute(self, pending)
 
-            self._rows = result['data']
+            if RESULT_FORMAT == 'row':
+                self._rows = result['data']
+            elif RESULT_FORMAT == 'graph':
+                for row in result['data']:
+                    self._rows.append(row['graph']['nodes']
+                                      + row['graph']['relationships'])
+
+            if RESULT_FORMAT == 'rest':
+                self._rows = [r['rest'] for r in result['data']]
+
             self._rowcount = len(self._rows)
             self._description = [(name, neo4j.MIXED, None, None, None, None, True) for name in result['columns']]
             self._cursor = 0

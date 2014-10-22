@@ -4,7 +4,7 @@ from neo4j.connection import Connection
 apilevel = '2.0'
 threadsafety = 1
 
-# This is non-standard, it uses neos built-in params. 
+# This is non-standard, it uses neos built-in params.
 paramstyle = 'curly'
 
 
@@ -24,7 +24,7 @@ def connect(dsn):
 
 
 class TypeCode(object):
-    
+
     def __init__(self, code):
         self._code = code
 
@@ -42,7 +42,7 @@ class TypeCode(object):
 
 
 class TypeObject(object):
-    
+
     def __init__(self, *args, **kwargs):
         raise NotSupportedError("Complex types are not yet supported.")
 
@@ -63,7 +63,7 @@ ROWID = TypeCode("ROWID")
 MIXED = TypeCode("MIXED")
 
 #
-# Exceptions 
+# Exceptions
 #
 
 Error = Connection.Error

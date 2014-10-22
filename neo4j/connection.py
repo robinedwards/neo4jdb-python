@@ -1,7 +1,7 @@
 
 import json
 
-from neo4j.cursor import Cursor
+from neo4j.cursor import Cursor, RESULT_FORMAT
 from neo4j.strings import ustr
 
 try:
@@ -75,11 +75,16 @@ class Connection(object):
     def commit(self):
         self._messages = []
         pending = self._gather_pending()
-        
+
         if self._tx != TX_ENDPOINT or len(pending) > 0:
             payload = None
             if len(pending) > 0:
-                payload = {'statements': [{'statement': s, 'parameters': p} for (s, p) in pending]}
+                payload = {'statements': [
+                    {
+                        'statement': s,
+                        'parameters': p,
+                        "resultDataContents": [RESULT_FORMAT]
+                    } for (s, p) in pending]}
             response = self._deserialize(self._http_req("POST", self._tx + "/commit", payload))
             self._tx = TX_ENDPOINT
             self._handle_errors(response, self, None)
@@ -125,11 +130,12 @@ class Connection(object):
 
     def _execute(self, cursor, statements):
         """"
-        Executes a list of statements, returning an iterator of results sets. Each 
+        Executes a list of statements, returning an iterator of results sets. Each
         statement should be a tuple of (statement, params).
         """
-        payload = [{'statement': s, 'parameters': p} for (s, p) in statements]
-        http_response = self._http_req("POST", self._tx, {'statements': payload})
+        payload = [{'statement': s, 'parameters': p, "resultDataContents": [RESULT_FORMAT]}
+                   for (s, p) in statements]
+        http_response = self._http_req("POST", self._tx, {'statements': payload, })
 
         if self._tx == TX_ENDPOINT:
             self._tx = http_response.getheader('Location')
